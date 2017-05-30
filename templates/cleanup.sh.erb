@@ -1,0 +1,51 @@
+#!/bin/bash
+#
+# File Backup Script
+# This file is centrally managed by puppet, any manual changes will be OVERWRITTEN
+#
+##### START CONFIG ###################################################
+set -x
+cd "${0%/*}"
+
+##### STOP CONFIG ####################################################
+PATH=/usr/bin:/usr/sbin:/bin:/sbin
+
+
+<% if @cache == true -%>
+rm <%= @document_root%>/<%= @name%>/<%= @cache_dir%>/* -R
+<% end -%>
+
+<% if @log == true -%>
+rm <%= @document_root%>/<%= @name%>/<%= @log_dir%>/*
+<% end -%>
+
+<% if @catalog_media_cache == true -%>
+rm <%= @document_root%>/<%= @name%>/<%= @catalog_media_cache_dir%>/* -R
+<% end -%>
+
+<% if @session == true -%>
+find <%= @document_root%>/<%= @name%>/<%= @session_dir%> -type f -mtime +2 -exec rm {} \;
+<% end -%>
+
+<% if @report == true -%>
+find <%= @document_root%>/<%= @name%>/<%= @report_dir%> -type f -mtime +1 -exec rm {} \;
+<% end -%>
+
+<% if @mysql == true -%>
+
+dbname=`sed -n 's:.*<dbname>\(<!\[CDATA\[\)*\([a-z_0-9A-Z]*\)\(\]\]>\)*</dbname>.*:\2:p' ../app/etc/local.xml`
+
+echo "TRUNCATE \`log_visitor_online\`;" | mysql ${dbname}
+echo "TRUNCATE \`log_visitor_info\`;" | mysql ${dbname}
+echo "TRUNCATE \`log_visitor\`;" | mysql ${dbname}
+echo "TRUNCATE \`log_url_info\`;" | mysql ${dbname}
+echo "TRUNCATE \`log_url\`;" | mysql ${dbname}
+echo "TRUNCATE \`log_summary_type\`;" | mysql ${dbname}
+echo "TRUNCATE \`log_summary\`;" | mysql ${dbname}
+echo "TRUNCATE \`log_quote\`;" | mysql ${dbname}
+echo "TRUNCATE \`log_customer\`;" | mysql ${dbname}
+echo "TRUNCATE \`report_viewed_product_index\`;" | mysql ${dbname}
+echo "TRUNCATE \`report_compared_product_index\`;" | mysql ${dbname}
+echo "TRUNCATE \`report_event\`;" | mysql ${dbname}
+
+<% end -%>
