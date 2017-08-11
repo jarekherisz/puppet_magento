@@ -3,7 +3,8 @@ define magento::magento  (
   $vhost_aliases = '',
   $vhost  = $name,
   $php_pool = "unix:/var/run/php5-fpm-${name}.sock",
-  $backend_php_pool = undef,
+  $different_backend_pool = false,
+  $backend_php_pool = "unix:/var/run/php5-fpm-${name}.backend.sock",
   $username                     = $nginx::params::username,
   $usergroup                     = $username,
   $document_root = "${nginx::params::document_root}/${name}",
@@ -73,36 +74,31 @@ define magento::magento  (
       "vhost"=>"${name}",
       "order" => "010",
       "params" => { 'return' => '404' }
-    },
-    '/admin' => {
-      'location' => '~ /(index\.php/admin|admin)',
-      "vhost"=>"${name}",
-      "order" => "011",
-      "params" => {
-        "index" => "/index.php",
-        'location ~ \.php$' => [
-          'echo_exec @phpfpm'
-        ],
-      }
-    },
+    }
   },
 ) {
 
-  if($backend_php_pool==undef)
+  if($different_backend_pool==false)
   {
     $locations_tmp = $locations_d
   } else
   {
-    $locations_tmp = deep_merge($locations_d,     {'/admin' => {
-                                                    "params" => {
-                                                      "set" => "\$custom_php_pool unix:/var/run/php5-fpm-${name}.admin.sock",
-                                                      'location ~ \.php$' => [
-                                                        "set \$custom_php_pool unix:/var/run/php5-fpm-${name}.admin.sock",
-                                                        'echo_exec @phpfpm'
-                                                      ]
-                                                    }
-                                                    }
-    })
+    $locations_tmp = deep_merge($locations_d,
+      {
+        '/admin' =>
+        {
+          'location' => '~ /(index\.php/admin|admin)',
+          "vhost"=>"${name}",
+          "order" => "011",
+          "params" =>
+          {
+            "index" => "/index.php",
+            'set' => "\$custom_php_pool ${backend_php_pool}",
+            'try_files' => '$uri $uri/ @handler',
+          }
+        },
+      }
+    )
   }
 
 ##Łączy dwie tabele
