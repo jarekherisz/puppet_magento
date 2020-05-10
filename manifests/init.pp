@@ -1,3 +1,4 @@
+##ZOSTAJE HISTORYCZNIE NIE URZYWAC
 define magento  (
   $tcp_port = "80",
   $extra_config     = [
@@ -14,7 +15,9 @@ define magento  (
     'location ^~ /var/                { return 404; }',
     'location ^~ /.git/               { return 404; }',
     'location ^~ /shell/              { return 404; }',
-    'location ^~ /downloader/         { return 404; }'],
+    'location ^~ /downloader/         { return 404; }',
+    'location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {expires 365d;}'],
+  $extra_config_after = [],
   $extra_root_location = ['try_files $uri $uri/ @handler;'],
   $vhost_aliases = '',
   $vhost  = $name,
@@ -34,7 +37,7 @@ define magento  (
 
   nginx::vhost{ $name:
     tcp_port => $tcp_port,
-    extra_config => $extra_config,
+    extra_config => concat($extra_config, $extra_config_after),
     vhost_aliases =>$vhost_aliases,
     fastcgi_read_timeout => 3600,
     authentication =>   $authentication,
